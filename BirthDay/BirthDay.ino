@@ -38,7 +38,7 @@ void pulsingMorse(Adafruit_NeoPixel* strip, String morse, uint8_t wait) {
   for(int i = 0; i < morse.length(); i++){
     strip->setBrightness(BRIGHTNESS);
     for(uint16_t j=0; j<strip->numPixels(); j++) {
-      strip->setPixelColor(i, Wheel(strip, ((i * 256 / strip->numPixels()) + j) & 255));
+      strip->setPixelColor(j, Wheel(strip, ((i * 256 / strip->numPixels()) + j) & 255));
     }
     strip->show();
     
@@ -60,7 +60,7 @@ void pulsingMorse(Adafruit_NeoPixel* strip, String morse, uint8_t wait) {
     }
     // turn off
     for(uint16_t j=0; j<strip->numPixels(); j++) {
-      strip->setPixelColor(i, strip->Color(0,0,0));
+      strip->setPixelColor(j, strip->Color(0,0,0));
     }
     strip->show();
     delay(wait);
