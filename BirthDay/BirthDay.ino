@@ -10,7 +10,8 @@
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN_NUMBER, NEO_GRB + NEO_KHZ800);
 
 // http://morsecode.scphillips.com/translator.html
-String morse = ".... .- .--. .--. -.-- / -... .. .-. - .... -.. .- -.-- --..-- / -.-. .- - / ..-. ..-";
+char morse[] = "- .... . / - .. -- . / .-- .. .-.. .-.. / -.-. --- -- . / .-- .... . -. --..-- / .-- .. - .... / . .-.. .- - .. --- -. --..-- / -.-- --- ..- / .-- .. .-.. .-.. / --. .-. . . - / -.-- --- ..- .-. ... . .-.. ..-. / .- .-. .-. .. ...- .. -. --. / .- - / -.-- --- ..- .-. / --- .-- -. / -.. --- --- .-. --..-- / .. -. / -.-- --- ..- .-. / --- .-- -. / -- .. .-. .-. --- .-. --..-- / .- -. -.. / . .- -.-. .... / .-- .. .-.. .-.. / ... -- .. .-.. . / .- - / - .... . / --- - .... . .-. .----. ... / .-- . .-.. -.-. --- -- . .-.-.-";
+// String morse = ".... .- .--. .--. -.-- / -... .. .-. - .... -.. .- -.-- --..-- / -.-. .- - / ..-. ..-";
 
 void setup() {
   Serial.begin(115200);
@@ -30,15 +31,15 @@ void initStrip(Adafruit_NeoPixel* strip) {
 }
 
 void loop() {
-  pulsingMorse(&strip, morse, 100);
-  snakeMorse(&strip, morse, 50);
+  pulsingMorse(&strip, morse, 500);
+  snakeMorse(&strip, morse, 250);
 }
 
-void pulsingMorse(Adafruit_NeoPixel* strip, String morse, uint8_t wait) {
+void pulsingMorse(Adafruit_NeoPixel* strip, String morse, uint16_t wait) {
   for(int i = 0; i < morse.length(); i++){
     strip->setBrightness(BRIGHTNESS);
     for(uint16_t j=0; j<strip->numPixels(); j++) {
-      strip->setPixelColor(j, Wheel(strip, ((i * 256 / strip->numPixels()) + j) & 255));
+      strip->setPixelColor(j, Wheel(strip, ((j * 256 / strip->numPixels()) + i) & 255));
     }
     strip->show();
     
@@ -53,11 +54,11 @@ void pulsingMorse(Adafruit_NeoPixel* strip, String morse, uint8_t wait) {
     }
 
     // fade out
-    for(int j=10; j>=0; j--) {
-      strip->setBrightness(BRIGHTNESS*(10-j)/10);
-      strip->show();
-      delay(wait/10);
-    }
+//    for(int j=10; j>=0; j--) {
+//      strip->setBrightness(BRIGHTNESS*(10-j)/10);
+//      strip->show();
+//      delay(wait/10);
+//    }
     // turn off
     for(uint16_t j=0; j<strip->numPixels(); j++) {
       strip->setPixelColor(j, strip->Color(0,0,0));
@@ -67,8 +68,8 @@ void pulsingMorse(Adafruit_NeoPixel* strip, String morse, uint8_t wait) {
   }
 }
 
-void snakeMorse(Adafruit_NeoPixel* strip, String morse, uint8_t wait) {
-  bool charstack[4];
+void snakeMorse(Adafruit_NeoPixel* strip, String morse, uint16_t wait) {
+  bool charstack[6];
   bool leds[strip->numPixels()];
   for(uint16_t i=0; i<strip->numPixels(); i++) {
     leds[i] = false;
@@ -94,31 +95,43 @@ void snakeMorse(Adafruit_NeoPixel* strip, String morse, uint8_t wait) {
       if(morse[currentLetter] == '.') {
         charstack[0] = true;
         charstack[1] = false;
-        charstackUsed = 2;
+        charstack[2] = false;
+        charstackUsed = 3;
       } else if(morse[currentLetter] == '-') {
         charstack[0] = true;
         charstack[1] = true;
         charstack[2] = true;
-        charstack[3] = false;
-        charstackUsed = 4;
+        charstack[3] = true;
+        charstack[4] = false;
+        charstack[5] = false;
+        charstackUsed = 6;
       } else if(morse[currentLetter] == ' ') {
         charstack[0] = false;
         charstack[1] = false;
         charstack[2] = false;
-        charstackUsed = 3;
+        charstack[3] = false;
+        charstackUsed = 4;
       } else if(morse[currentLetter] == '/') {
         charstack[0] = false;
-        charstackUsed = 1;
+        charstack[1] = false;
+        charstack[2] = false;
+        charstack[3] = false;
+        charstackUsed = 4;
       }
       currentLetter++;
       currentCharstack = 0;
     }
-    leds[0] = charstack[currentCharstack++];
+    if (currentCharstack < charstackUsed) {
+        leds[0] = charstack[currentCharstack++];
+    }
+    else {
+        leds[0] = false;
+    }
 
     // set colors
     for(int i=0; i<strip->numPixels(); i++) {
       if(leds[i]) {
-        strip->setPixelColor(i, Wheel(strip, ((i * 256 / strip->numPixels())) & 255));
+        strip->setPixelColor(i, Wheel(strip, ((i * 256 / strip->numPixels()) + currentLetter) & 255));
       } else {
         strip->setPixelColor(i, strip->Color(0,0,0));
       }
@@ -128,7 +141,7 @@ void snakeMorse(Adafruit_NeoPixel* strip, String morse, uint8_t wait) {
   }
 }
 
-void solidColor(Adafruit_NeoPixel* strip, uint32_t c, uint8_t wait) {
+void solidColor(Adafruit_NeoPixel* strip, uint32_t c, uint16_t wait) {
   for(uint16_t i=0; i<strip->numPixels(); i++) {
     strip->setPixelColor(i, c);
   }
@@ -137,7 +150,7 @@ void solidColor(Adafruit_NeoPixel* strip, uint32_t c, uint8_t wait) {
 }
 
 // Fill the dots one after the other with a color
-void colorWipe(Adafruit_NeoPixel* strip, uint32_t c, uint8_t wait) {
+void colorWipe(Adafruit_NeoPixel* strip, uint32_t c, uint16_t wait) {
   for(uint16_t i=0; i<strip->numPixels(); i++) {
     strip->setPixelColor(i, c);
     strip->show();
@@ -147,7 +160,7 @@ void colorWipe(Adafruit_NeoPixel* strip, uint32_t c, uint8_t wait) {
 
 
 // Slightly different, this makes the rainbow equally distributed throughout
-void rainbowCycle(Adafruit_NeoPixel* strip, uint8_t wait) {
+void rainbowCycle(Adafruit_NeoPixel* strip, uint16_t wait) {
   uint16_t i, j;
 
   for(j=0; j<256 * 5; j++) { // 5 cycles of all colors on wheel
@@ -159,7 +172,7 @@ void rainbowCycle(Adafruit_NeoPixel* strip, uint8_t wait) {
   }
 }
 
-void rainbow(Adafruit_NeoPixel* strip, uint8_t wait) {
+void rainbow(Adafruit_NeoPixel* strip, uint16_t wait) {
   uint16_t i, j;
 
   for(j=0; j<256; j++) {
