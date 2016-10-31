@@ -48,11 +48,11 @@ private:
     }
 
 // servo control object
-Servo servo1;  //alive cat
-Servo servo2; //dead cat
-Servo servo3; //candy door
+Servo servo1; // alive cat
+Servo servo2; // dead cat
+Servo servo3; // candy door
 
-Ultrasonic ultrasonic(9); //Pin 9 for Ultrasonic sensor
+Ultrasonic ultrasonic(9); // Pin 9 for Ultrasonic sensor
 
 int state = STATE_CLOSED;
 
@@ -60,7 +60,7 @@ void setup()
 {
     Serial.begin(9600);
 
-    servo1.attach(6); //assign servos to digital pins
+    servo1.attach(6); // assign servos to digital pins
     servo2.attach(7);
     servo3.attach(8);
 }
@@ -93,11 +93,11 @@ void loop()
     // Serial.println(" cm");
     // delay(1000);
 
-    if((rangeInCentimeters <= OPEN_DISTANCE_CM) && state == STATE_CLOSED) {
+    if((rangeInCentimeters <= OPEN_DISTANCE_CM) && (state == STATE_CLOSED)) {
         // person in range && box closed -> open
         state = STATE_OPENED;
 
-        if(random(1) < 0.5) { // if the cat is alive, alive cat pops up, candy door open, pause for 2 seconds then resume to original position
+        if(random(2) == 0) { // if the cat is alive, alive cat pops up, candy door open, pause for 2 seconds then resume to original position
             slowlyChangeServo(&servo1, 180, OPENING_SPEED);
             slowlyChangeServo(&servo3,  90, OPENING_SPEED);
             // servo1.write(180);
@@ -110,10 +110,10 @@ void loop()
             // servo3.write(90);
             // delay(1000);
         }
-    } else if ((rangeInCentimeters <= OPEN_DISTANCE_CM) && state == STATE_CLOSED) {
+    } else if ((rangeInCentimeters <= OPEN_DISTANCE_CM) && (state == STATE_CLOSED)) {
         // in range && opened -> do nothing
     }
-    else if ((rangeInCentimeters > OPEN_DISTANCE_CM) && state == STATE_CLOSED) {
+    else if ((rangeInCentimeters > OPEN_DISTANCE_CM) && (state == STATE_CLOSED)) {
         // out of range && closed -> do nothing
     } else {
         // out of range && opened -> close
@@ -137,13 +137,13 @@ void slowlyChangeServo(Servo* servo, int finalAngle, int wait)
     if (position < finalAngle) {
         for(; position < finalAngle; position += 2)
         {
-            servo1.write(position);  // Move to next position
+            servo->write(position);  // Move to next position
             delay(wait);             // Short pause to allow it to move
         }
     } else {
         for(; position > finalAngle; position -= 2)
         {
-            servo1.write(position);  // Move to next position
+            servo->write(position);  // Move to next position
             delay(wait);             // Short pause to allow it to move
         }
     }
