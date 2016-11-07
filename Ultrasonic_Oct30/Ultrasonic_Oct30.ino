@@ -8,6 +8,9 @@
 #define STATE_CLOSED 0
 #define STATE_OPENED 1
 
+#define STATE_EVENING 0
+#define STATE_MORNING 1
+
 // http://wiki.seeedstudio.com/wiki/Ultra_Sonic_range_measurement_module
 class Ultrasonic
 {
@@ -50,19 +53,22 @@ private:
 // servo control object
 Servo servo1; // alive cat
 Servo servo2; // dead cat
-Servo servo3; // candy door
+Servo servo3; // candy door alive
+Servo servo4; // candy door dead
 
 Ultrasonic ultrasonic(9); // Pin 9 for Ultrasonic sensor
 
 int state = STATE_CLOSED;
+int dayState = STATE_MORNING;
 
 void setup()
 {
     Serial.begin(9600);
 
-    servo1.attach(6); // assign servos to digital pins
-    servo2.attach(7);
-    servo3.attach(8);
+    servo1.attach(5); // assign servos to digital pins
+    servo2.attach(6);
+    servo3.attach(7);
+    servo4.attach(8);
 }
 
 void loop()
@@ -74,41 +80,22 @@ void loop()
     // servo1.write(180);   // Tell servo to go to 180 degrees
     // delay(1000);         // Pause to get it time to move
 
-    // Change position at a slower speed:
-    // Tell servo to go to 180 degrees, stepping by two degrees
-    // for(position = 0; position < 180; position += 2)
-    // {
-    //   servo1.write(position);  // Move to next position
-    //   delay(20);               // Short pause to allow it to move
-    // }
-
     ultrasonic.DistanceMeasure(); // get the current signal time;
     long rangeInInches = ultrasonic.microsecondsToInches(); // convert the time to inches;
     long rangeInCentimeters = ultrasonic.microsecondsToCentimeters(); // convert the time to centimeters
-
-    // Serial.println("The distance to obstacles in front is: ");
-    // Serial.print(rangeInInches); // 0~157 inches
-    // Serial.println(" inch");
-    // Serial.print(rangeInCentimeters); // 0~400cm
-    // Serial.println(" cm");
-    // delay(1000);
 
     if((rangeInCentimeters <= OPEN_DISTANCE_CM) && (state == STATE_CLOSED)) {
         // person in range && box closed -> open
         state = STATE_OPENED;
 
-        if(random(2) == 0) { // if the cat is alive, alive cat pops up, candy door open, pause for 2 seconds then resume to original position
+        if(dayState == STATE_MORNING) { // if the cat is alive, alive cat pops up, candy door open, pause for 2 seconds then resume to original position
+        	dayState = STATE_EVENING;
             slowlyChangeServo(&servo1, 180, OPENING_SPEED);
             slowlyChangeServo(&servo3,  90, OPENING_SPEED);
-            // servo1.write(180);
-            // servo3.write(90);
-            // delay(2000);
         } else { // if the cat is dead, dead cat pops up, candy door open, pause for 1 second then resume to original position
+        	dayState = STATE_MORNING;
             slowlyChangeServo(&servo2, 180, OPENING_SPEED);
-            slowlyChangeServo(&servo3,  90, OPENING_SPEED);
-            // servo2.write(180);
-            // servo3.write(90);
-            // delay(1000);
+            slowlyChangeServo(&servo4,  90, OPENING_SPEED);
         }
     } else if ((rangeInCentimeters <= OPEN_DISTANCE_CM) && (state == STATE_CLOSED)) {
         // in range && opened -> do nothing
@@ -123,11 +110,8 @@ void loop()
         slowlyChangeServo(&servo1, 0, CLOSING_SPEED);
         slowlyChangeServo(&servo2, 0, CLOSING_SPEED);
         slowlyChangeServo(&servo3, 0, CLOSING_SPEED);
+        slowlyChangeServo(&servo4, 0, CLOSING_SPEED);
         delay(1000); // wait a second before the cat can pop out again
-        // servo1.write(0);
-        // servo2.write(0);
-        // servo3.write(0);
-        // delay(1000);
     }
 }
 
