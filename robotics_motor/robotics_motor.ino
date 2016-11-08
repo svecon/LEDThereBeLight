@@ -18,6 +18,8 @@ const int motorPin3 = 9;
 const int motorPin4 = 10;
 
 const int LIGHT_THRESHOLD = 127;
+const unsigned long SWITCH_OFF_DELAY = 2000; // 2s
+const unsigned long SWITCH_ON_DELAY = 1000; // 1s
 
 int lightLevel1;
 int lightLevel2;
@@ -28,15 +30,21 @@ int high2 = 0, low2 = 1023;
 int high3 = 0, low3 = 1023;
 int high4 = 0, low4 = 1023;
 
-int maxSpeed1 = 50;
-int maxSpeed2 = 100;
-int maxSpeed3 = 150;
-int maxSpeed4 = 200;
+const int maxSpeed1 = 50;
+const int maxSpeed2 = 100;
+const int maxSpeed3 = 150;
+const int maxSpeed4 = 200;
 
-int speed1 = maxSpeed1;
-int speed2 = maxSpeed2;
-int speed3 = maxSpeed3;
-int speed4 = maxSpeed4;
+int speed1 = 0;
+int speed2 = 0;
+int speed3 = 0;
+int speed4 = 0;
+
+unsigned long currentTime;
+unsigned long time1 = 0;
+unsigned long time2 = 0;
+unsigned long time3 = 0;
+unsigned long time4 = 0;
 
 void setup()
 {
@@ -52,28 +60,17 @@ void setup()
 
 void loop()
 {
-	speed1 = 0;
-	speed2 = 0;
-	speed3 = 0;
-	speed4 = 0;
-
     lightLevel1 = autoTune(sensorPin1, &low1, &high1);
     lightLevel2 = autoTune(sensorPin2, &low2, &high2);
     lightLevel3 = autoTune(sensorPin3, &low3, &high3);
     lightLevel4 = autoTune(sensorPin4, &low4, &high4);
 
-    if (lightLevel1 > LIGHT_THRESHOLD) {
-    	speed1 = maxSpeed1;
-    }
-    if (lightLevel2 > LIGHT_THRESHOLD) {
-    	speed2 = maxSpeed2;
-    }
-    if (lightLevel3 > LIGHT_THRESHOLD) {
-    	speed3 = maxSpeed3;
-    }
-    if (lightLevel4 < LIGHT_THRESHOLD) { // run when dark
-    	speed4 = maxSpeed4;
-    }
+    currentTime = millis();
+
+    pulseMotor(lightLevel1, &speed1, &time1, currentTime, maxSpeed1);
+    pulseMotor(lightLevel2, &speed2, &time2, currentTime, maxSpeed2);
+    pulseMotor(lightLevel3, &speed3, &time3, currentTime, maxSpeed3);
+    pulseMotor(lightLevel4, &speed4, &time4, currentTime, maxSpeed4);
 
     analogWrite(motorPin1, speed1);
     analogWrite(motorPin2, speed2);
@@ -125,4 +122,21 @@ int autoTune(int sensorPin, int* low, int* high)
     lightLevel = constrain(lightLevel, 0, 255);
 
     return lightLevel;
+}
+
+void pulseMotor(int lightLevel, int* speed, unsigned long* time, unsigned long currentTime, int maxSpeed) {
+    if (lightLevel > LIGHT_THRESHOLD) {
+        if (*speed == 0 && *time < currentTime) {
+            *speed = maxSpeed;
+            *time = currentTime + SWITCH_OFF_DELAY;
+        } else if (currentTime < *time) {
+            // dont change speed - inside of the interval
+        } else {
+            *speed = 0;
+            *time = currentTime + SWITCH_ON_DELAY;
+        }
+    } else {
+        *time = 0;
+        *speed = 0;
+    }
 }
